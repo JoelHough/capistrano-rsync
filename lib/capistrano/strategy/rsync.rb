@@ -35,11 +35,15 @@ desc "Stage and rsync to the server (or its cache)."
 task :rsync => %w[rsync:stage] do
   release_roles(:all).each do |role|
     user = role.user + "@" if !role.user.nil?
+    ssh_options = fetch(:ssh_options, {})
 
     rsync_args = []
     rsync_args.concat fetch(:rsync_options)
     rsync_args << fetch(:build_dir) + "/"
     rsync_args << "#{user}#{role.hostname}:#{rsync_cache.call || release_path}"
+    if ssh_options[:proxy]
+      rsync_args << "-e" << "ssh -o ProxyCommand='#{ssh_options[:proxy].command_line_template}'"
+    end
 
     run_locally do
       execute :rsync, *rsync_args
