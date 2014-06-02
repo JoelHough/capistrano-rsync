@@ -50,11 +50,11 @@ end
 namespace :rsync do
   task :hook_scm do
     Rake::Task.define_task("#{scm}:check") do
-      invoke "rsync:check" 
+      invoke "rsync:check"
     end
 
     Rake::Task.define_task("#{scm}:create_release") do
-      invoke "rsync:release" 
+      invoke "rsync:release"
     end
   end
 
@@ -96,6 +96,13 @@ namespace :rsync do
   # Plus was part of the public API in Capistrano::Rsync <= v0.2.1.
   task :create_release => %w[release]
 
+  desc "Set the current revision"
   task :set_current_revision do
+    run_locally do
+      within fetch(:build_dir) do
+        rev = capture(:git, 'rev-parse', 'HEAD')
+        set :current_revision, rev
+      end
+    end
   end
 end
