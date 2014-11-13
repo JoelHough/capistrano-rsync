@@ -76,7 +76,7 @@ namespace :rsync do
     next if File.directory?(fetch(:build_dir))
 
     run_locally do
-      execute :git, 'clone', fetch(:repo_url, "."), fetch(:build_dir), '--recursive'
+      execute :git, :clone, fetch(:repo_url, "."), fetch(:build_dir), '--recursive'
     end
   end
 
@@ -84,9 +84,12 @@ namespace :rsync do
   task :stage => %w[create_stage] do
     run_locally do
       within fetch(:build_dir) do
-        execute :git, 'fetch --quiet --all --prune'
-        execute :git, "reset --hard origin/#{fetch(:branch)}"
-        execute :git, 'submodule update --init --recursive'
+        ref = capture(:git, 'ls-remote', 'origin', fetch(:branch)).split.first || fetch(:branch)
+
+        execute :git, :fetch, '--quiet --all --prune'
+        execute :git, :clean, '-f'
+        execute :git, :checkout, ref
+        execute :git, :submodule, :update, '--init --recursive'
       end
     end
   end
@@ -110,8 +113,7 @@ namespace :rsync do
   task :set_current_revision do
     run_locally do
       within fetch(:build_dir) do
-        rev = capture(:git, 'rev-parse', 'HEAD')
-        set :current_revision, rev
+        set :current_revision, capture(:git, 'rev-parse', 'HEAD')
       end
     end
   end
