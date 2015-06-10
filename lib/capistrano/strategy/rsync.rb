@@ -35,8 +35,7 @@ Rake::Task["deploy:updating"].enhance ["rsync:hook_scm"]
 desc "Stage and rsync to the server (or its cache)."
 task :rsync => %w[rsync:stage] do
   on release_roles(:all), in: :parallel do |host|
-    user = host.user + "@" if !host.user.nil?
-    ssh_options = fetch(:ssh_options, {})
+    ssh_options = fetch(:ssh_options, {}).merge(host.netssh_options)
     ssh_cmd_options = {}
     if ssh_options[:proxy]
       ssh_cmd_options['ProxyCommand'] = ssh_options[:proxy].command_line_template
@@ -50,6 +49,8 @@ task :rsync => %w[rsync:stage] do
       rsync_args = []
       rsync_args.concat fetch(:rsync_options)
       rsync_args << fetch(:build_dir) + "/"
+      user = ssh_options[:user]
+      user += '@' if user
       rsync_args << "#{user}#{host.hostname}:#{rsync_cache.call || release_path}"
       rsync_args << "-e" << Shellwords.escape(ssh_cmd)
       execute :rsync, *rsync_args
