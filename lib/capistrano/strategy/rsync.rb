@@ -1,4 +1,5 @@
 require File.expand_path('../rsync/version', File.dirname(__FILE__))
+require 'shellwords'
 
 # NOTE: Please don't depend on tasks without a description (`desc`) as they
 # might change between minor or patch version releases. They make up the
@@ -50,7 +51,7 @@ task :rsync => %w[rsync:stage] do
       rsync_args.concat fetch(:rsync_options)
       rsync_args << fetch(:build_dir) + "/"
       rsync_args << "#{user}#{host.hostname}:#{rsync_cache.call || release_path}"
-    rsync_args << "-e" << ssh_cmd
+      rsync_args << "-e" << Shellwords.escape(ssh_cmd)
       execute :rsync, *rsync_args
     end
   end
